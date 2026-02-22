@@ -1,0 +1,41 @@
+name: build-macos
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build executable
+        run: scripts/build_mac.sh
+
+      - name: Zip artifact
+        run: |
+          mkdir -p artifacts
+          zip -j artifacts/brightness_from_mqtt-macos.zip dist/brightness_from_mqtt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightness_from_mqtt-macos
+          path: artifacts/brightness_from_mqtt-macos.zip
+
+      - name: Upload release asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/brightness_from_mqtt-macos.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
